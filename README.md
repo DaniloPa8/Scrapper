@@ -1,4 +1,4 @@
-Puppeteer Web Scraping Project
+## Puppeteer Web Scraping Project
 
 # Description
 
@@ -9,7 +9,7 @@ This project utilizes Puppeteer, a Node library, to perform web scraping tasks o
 To set up the project locally, follow these steps:
 
 Clone the repository:
-git clone https://github.com/yourusername/puppeteer-web-scraping.git
+git clone https://github.com/DaniloPa8/Scrapper.git
 
 Install the npm packages:
 npm install
@@ -43,10 +43,11 @@ Solution: Created functions to navigate between pages, retrieve product details,
 # Additional Features or Improvements
 
 In addition to the core scraping functionality, the following features were implemented:
+Pupetteer stealth module: A helper module to enhance robot-prevention capabalities.
 Random Mouse Movements: Simulated human-like mouse movements to mimic natural browsing behavior.
 Dynamic Form Filling: Automated filling of shipping forms with randomized data for checkout simulations.
 Headless Browser Stealth Mode: Enabled stealth mode to prevent detection by websites and bypass anti-bot measures.
 
 # Final word
 
-This README provides an overview of the project, setup instructions, assumptions made during development, challenges faced, and additional features implemented. Adjustments can be made as necessary based on specific project requirements and enhancements.
+This README provides an overview of the project, setup instructions, assumptions made during development, challenges faced, and additional features implemented. Further adjustments can be made as necessary based on specific project requirements and enhancements.

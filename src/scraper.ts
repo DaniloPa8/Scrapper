@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer-extra");
 const pluginStealth = require("puppeteer-extra-plugin-stealth");
 const fs = require("fs");
 
-import { Browser, Page } from "puppeteer";
+import { Browser, Dialog, Page } from "puppeteer";
 import {
   chooseSelectOptions,
   clickButton,
@@ -15,24 +15,38 @@ import {
 import { randomMouseMove, sleep } from "./utils/generalUtils";
 import { Item, Product } from "./types/resultTypes";
 
-const scrape = async (url: string) => {
-  // Init puppeteer
+const scrape = async (
+  url: string,
+  numberOfCards: number,
+  headless: boolean
+) => {
+  // Init puppeteer with the stealth plugin to enhance robot-detection prevention
   puppeteer.use(pluginStealth());
 
   // Call the scraping function to extract all required details with the URL as a paramater
-  let listingCards: (Item | null)[] = await scrapeWebsite(url);
+  let listingCards: (Item | null)[] = await scrapeWebsite(
+    url,
+    numberOfCards,
+    headless
+  );
 
   // Write the result to a result.json file
-  fs.writeFileSync("./result.json", JSON.stringify(listingCards));
+  fs.writeFileSync("./result.json", JSON.stringify(listingCards), {
+    flag: "a",
+  });
 
   // Inform the user that scraping is completed
   console.log("====== RESULTS WRITTEN ! =======");
 };
 
-const scrapeWebsite = async (url: string): Promise<(Item | null)[]> => {
+const scrapeWebsite = async (
+  url: string,
+  numberOfCards: number,
+  headless: boolean
+): Promise<(Item | null)[]> => {
   // Launch the browser
   const browser = await puppeteer.launch({
-    headless: false,
+    headless,
     ignoreDefaultArgs: ["--disable-extensions"],
     args: ["--no-sandbox"],
   });
@@ -55,7 +69,6 @@ const scrapeWebsite = async (url: string): Promise<(Item | null)[]> => {
     hasTouch: false,
     isLandscape: false,
     isMobile: false,
-    fullScreen: true,
   });
 
   // Set a UserAgent to mimic real user
@@ -72,23 +85,24 @@ const scrapeWebsite = async (url: string): Promise<(Item | null)[]> => {
   });
 
   // Call getListingCards function to retrive product data from the entry page
-  let listingCards: (Item | null)[] = await getListingCards(page, 10);
+  let listingCards: (Item | null)[] = await getListingCards(
+    page,
+    numberOfCards
+  );
 
   // For each retrived item, navigate to its page and retrive details
   for (let i = 0; i < listingCards.length; i++) {
+    1;
     // Invoking sleep to slow down actions, avoiding robot detection
-    await sleep(10);
+    await sleep(5);
 
     // Getting the product link
     let link = listingCards[i]?.link;
     if (link === undefined || link === null) continue;
-
     // Random mouse movement to simulate human behaviour
     await randomMouseMove(page, 3);
-
     // Check if current item is the last item
     const isLastItem: boolean = i === listingCards.length - 1;
-
     // Calling moveToProductAndScrape to navigate to the product page
     // and retrive all relevant details
     let pageDetails = await moveToProductAndScrape(
@@ -156,7 +170,7 @@ const moveToProductAndScrape = async (
     await randomMouseMove(newPage, 2);
 
     // Call sleep to slow down code execution
-    await sleep(5);
+    await sleep(2);
 
     // Submit the Add to Cart form
     await submitForm(newPage, "form[data-buy-box-add-to-cart-form]");
@@ -172,7 +186,7 @@ const moveToProductAndScrape = async (
     // Random mouse movement to simulate human behaviour
     await randomMouseMove(newPage, 3);
 
-    await sleep(5);
+    await sleep(2);
 
     // Close the page if the item is not the last one
     if (!lastItem) newPage.close();
@@ -187,7 +201,7 @@ const moveToProductAndScrape = async (
 
 const checkout = async (page: Page) => {
   // Random mouse movement to simulate human behaviour
-  await randomMouseMove(page, 10);
+  await randomMouseMove(page, 3);
 
   // Wait for the proceed to checkout button to appear
   await page.waitForSelector(".proceed-to-checkout");
@@ -196,10 +210,15 @@ const checkout = async (page: Page) => {
   await clickButton(page, ".proceed-to-checkout");
 
   // Wait for the "Continue as a guest" button to appear
-  await page.waitForSelector("#join-neu-continue-as-guest");
-
-  // Submit the "Continue as a guest" form
-  await submitForm(page, "#join-neu-continue-as-guest");
+  try {
+    await Promise.all([
+      await page.waitForSelector("#join-neu-continue-as-guest"),
+      // Submit the "Continue as a guest" form
+      await submitForm(page, "#join-neu-continue-as-guest"),
+    ]);
+  } catch (error) {
+    console.log("Form submit error!");
+  }
 
   // Random mouse movement to simulate human behaviour
   await randomMouseMove(page, 5);
@@ -207,20 +226,15 @@ const checkout = async (page: Page) => {
   // Call a helper function to fill the shipping form with data
   await fillShippingForm(page);
 
-  await sleep(5);
+  await sleep(3);
 
   // Random mouse movement to simulate human behaviour
   await randomMouseMove(page, 2);
 
   // Submit the shipping form
+  page.on("dialog", (dialog) => dialog.accept());
+
   await submitForm(page, "form.wt-validation");
-
-  await sleep(10);
-
-  // Wait for the submit button selector
-  await page.waitForSelector("button[data-selector-save-btn]");
-
-  await clickButton(page, "button[data-selector-save-btn]");
 };
 
-scrape("https://www.etsy.com/c/clothing?ref=catnav-374");
+scrape("https://www.etsy.com/c/clothing?ref=catnav-374", 1, false);

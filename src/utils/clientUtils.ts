@@ -61,7 +61,6 @@ export const getListingCards = async (
         // Push the object containing product info to the array
         cards.push({ link: url, name, price });
       }
-
       // Return the cards array with product information
       return cards;
     }, numberOfCards);
@@ -74,7 +73,11 @@ export const getListingCards = async (
 export const chooseSelectOptions = async (page: Page) => {
   try {
     // Wait for select elements to be loaded
-    await page.waitForSelector("select[aria-labelledby]", timeoutOptions);
+    try {
+      await page.waitForSelector("select[aria-labelledby]", timeoutOptions);
+    } catch (error) {
+      console.log("No select elements found! Continue...");
+    }
 
     // Enter page evaluate
     await page.evaluate(() => {
@@ -262,8 +265,10 @@ export const moveToProduct = async (page: Page, selector: string) => {
 
       await page.waitForNavigation(timeoutOptions),
     ]);
-  } catch (error) {
-    console.log(error, "ERROR IN NAVIGATING TO PRODUCT!");
+  } catch (error: any) {
+    if (error.message.includes("Navigation timeout"))
+      console.log("Supposed navigation error! Selector:", selector);
+    else console.log(error, "ERROR IN NAVIGATING TO PRODUCT!");
   }
 };
 
@@ -331,7 +336,6 @@ export const clickButton = async (page: Page, selector: string) => {
   try {
     await page.evaluate((selector) => {
       let button: HTMLButtonElement | null = document.querySelector(selector);
-
       if (button) button.click();
     }, selector);
   } catch (error) {
